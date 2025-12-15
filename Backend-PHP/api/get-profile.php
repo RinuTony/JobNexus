@@ -1,0 +1,71 @@
+<?php
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Content-Type: application/json");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Authorization, Content-Type");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// Simple token verification (in production, use JWT)
+$userId = $_GET['userId'] ?? 0;
+
+if (!$userId) {
+    echo json_encode(['success' => false, 'message' => 'User ID required']);
+    exit();
+}
+
+$host = 'localhost';
+$dbname = 'job_nexus';
+$username = 'root';
+$password = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Get user info
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
+    $stmt->execute([':id' => $userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user) {
+        echo json_encode(['success' => false, 'message' => 'User not found']);
+        exit();
+    }
+    
+    // Get profile info
+    $stmt = $pdo->prepare("SELECT * FROM profiles WHERE user_id = :user_id");
+    $stmt->execute([':user_id' => $userId]);
+    $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Get role-specific profile
+    $roleTable = '';
+    switch ($user['role']) {
+        case 'candidate': $roleTable = 'candidate_profiles'; break;
+        case 'recruiter': $roleTable = 'recruiter_profiles'; break;
+        case 'admin': $roleTable = 'admin_profiles'; break;
+    }
+    
+    $roleProfile = [];
+    if ($roleTable) {
+        $stmt = $pdo->prepare("SELECT * FROM $roleTable WHERE user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
+        $roleProfile = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'profile' => array_merge(
+            $profile ?: [],
+            $roleProfile,
+            ['role' => $user['role']]
+        )
+    ]);
+    
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+}
+?>
