@@ -97,11 +97,12 @@ export default function Home() {
           </div>
           
           {/* Profile Icon in top right corner */}
-          {loggedIn && (
-            <div style={{ position: "absolute", top: "20px", right: "20px" }}>
-              <ProfileIcon />
-            </div>
-          )}
+        
+      {loggedIn && (
+  <div className="profile-icon-wrapper">
+    <ProfileIcon />
+  </div>
+)}
         </div>
         
         {/* Stars */}

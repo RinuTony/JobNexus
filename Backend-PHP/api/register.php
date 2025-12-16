@@ -1,4 +1,5 @@
 <?php
+include 'config.php';
 // Enable ALL error reporting at the VERY TOP
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

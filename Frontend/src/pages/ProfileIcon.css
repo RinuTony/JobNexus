@@ -1,7 +1,8 @@
-/* ProfileIcon.css */
+/* ProfileIcon.css - UPDATED */
 .profile-icon-container {
   position: relative;
   display: inline-block;
+  z-index: 9999 !important; /* Very high z-index */
 }
 
 .profile-icon-button {
@@ -9,18 +10,19 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
-  color: #374151;
+  color: white;
+  z-index: 10000;
 }
 
 .profile-icon-button:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .profile-avatar {
@@ -28,6 +30,7 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid white;
 }
 
 .profile-initials {
@@ -40,6 +43,7 @@
   color: white;
   font-weight: 600;
   font-size: 0.9rem;
+  border: 2px solid white;
 }
 
 .profile-name {
@@ -48,10 +52,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: white;
 }
 
 .dropdown-arrow {
   transition: transform 0.2s ease;
+  color: white;
 }
 
 .dropdown-arrow.open {
@@ -61,14 +67,14 @@
 /* Dropdown Menu */
 .profile-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   width: 320px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   border: 1px solid #e5e7eb;
-  z-index: 1000;
+  z-index: 10000 !important; /* Very high z-index */
   overflow: hidden;
   animation: dropdownSlide 0.2s ease;
 }
@@ -86,8 +92,9 @@
 
 .dropdown-header {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: white;
   border-bottom: 1px solid #e5e7eb;
+  color: white;
 }
 
 .dropdown-avatar {
@@ -97,7 +104,7 @@
   margin-bottom: 1rem;
   overflow: hidden;
   border: 3px solid white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .dropdown-avatar img {
@@ -115,31 +122,32 @@
   color: white;
   font-size: 1.5rem;
   font-weight: 600;
+  background: white;
 }
 
 .dropdown-user-info h4 {
   margin: 0 0 0.25rem 0;
-  color: #1f2937;
+  color: white;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
 .user-email {
   margin: 0 0 0.5rem 0;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 }
 
 .user-role {
   margin: 0;
   padding: 0.25rem 0.75rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   display: inline-block;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #4f46e5;
-  border: 1px solid #e5e7eb;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .dropdown-divider {
@@ -188,4 +196,13 @@
 
 .dropdown-item.logout svg {
   color: #dc2626;
+}
+
+/* For home page positioning */
+/* FIXED positioning so it never gets covered */
+.profile-icon-wrapper {
+  position: fixed; /* 🔥 KEY CHANGE */
+  top: 20px;
+  right: 20px;
+  z-index: 10001;
 }

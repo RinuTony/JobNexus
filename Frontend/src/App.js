@@ -11,6 +11,7 @@ import InterviewPrep from "./pages/InterviewPrep";
 import MatchScore from "./pages/MatchScore";
 import ResumeRanking from "./pages/ResumeRanking";
 import ProtectedRoute from "./components/ProtectedRoute"; // Create this component
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -22,6 +23,12 @@ function App() {
         
         {/* Protected Routes by Role */}
         
+  <Route element={<ProtectedRoute allowedRoles={["candidate", "recruiter", "admin"]} />}>
+    <Route path="/profile" element={<Profile />} />
+    <Route path="/settings" element={<Settings/>} />
+  </Route>
+        
+
         {/* Candidate Routes */}
         <Route element={<ProtectedRoute allowedRoles={["candidate"]} />}>
           <Route path="/candidates" element={<Candidates />} />

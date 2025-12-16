@@ -1,7 +1,7 @@
 /* Login.css - Compact Version */
 .login-page-compact {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   padding: 2rem;
 }
@@ -47,7 +47,7 @@
 }
 
 .logo-gradient {
-  background: linear-gradient(45deg, #4f46e5, #8b5cf6);
+  background: black;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -215,7 +215,7 @@
 .submit-btn-compact {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(45deg, #4f46e5, #7c3aed);
+  background: indigo;
   color: white;
   border: none;
   border-radius: 10px;
