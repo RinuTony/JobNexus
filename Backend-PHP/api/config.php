@@ -1,13 +1,26 @@
 <?php
 $host = "shinkansen.proxy.rlwy.net";
 $port = "58540";
-$user = "root";
+$dbname = "railway";
+$username = "root";
 $password = "KEISKsZjOPJWhyLUaXHVrwQKjiIrYRut";
-$database = "railway";
 
-$conn = mysqli_connect($host, $user, $password, $database, $port);
-
-if (!$conn) {
-    die("Database connection failed: " . mysqli_connect_error());
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4",
+        $username,
+        $password,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]
+    );
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database connection failed',
+        'error' => $e->getMessage()
+    ]);
+    exit();
 }
-?>

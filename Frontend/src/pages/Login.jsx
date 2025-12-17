@@ -25,7 +25,7 @@ export default function Login() {
 
     try {
       const endpoint = isLogin ? "login" : "register";
-      const url = `http://localhost/job-nexus/api/${endpoint}.php`;
+      const url = `http://localhost/JobNexus/Backend-PHP/api/${endpoint}.php`;
       
       const payload = isLogin 
         ? { email, password, role }
