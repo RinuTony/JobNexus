@@ -3,17 +3,17 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
 
 require_once __DIR__ . '/../config/database.php';
 
-$recruiter_id = $_GET["recruiter_id"] ?? null;
+$candidate_id = $_GET['candidate_id'] ?? null;
 
-if (!$recruiter_id) {
+if (!$candidate_id) {
     echo json_encode([
         "success" => false,
-        "message" => "recruiter_id is required"
+        "message" => "Candidate ID required"
     ]);
     exit;
 }
@@ -23,23 +23,9 @@ try {
     $database = new Database();
     $db = $database->getConnection();
 
-    $sql = "
-        SELECT 
-            a.id AS application_id,
-            a.status,
-            a.applied_at,
-            j.title AS job_title,
-            u.full_name AS candidate_name,
-            u.email AS candidate_email
-        FROM applications a
-        JOIN jobs j ON a.job_id = j.id
-        JOIN users u ON a.candidate_id = u.id
-        WHERE j.recruiter_id = ?
-        ORDER BY a.applied_at DESC
-    ";
-
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$recruiter_id]);
+    $query = "SELECT job_id, applied_at FROM applications WHERE candidate_id = ?";
+    $stmt = $db->prepare($query);
+    $stmt->execute([$candidate_id]);
 
     $applications = $stmt->fetchAll();
 

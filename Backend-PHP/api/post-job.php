@@ -2,18 +2,17 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-require "config.php"; // this gives $pdo
+require_once __DIR__ . '/../config/database.php';  // Updated path to go up one level
 
 $input = json_decode(file_get_contents("php://input"), true);
 
@@ -35,9 +34,13 @@ $description = trim($input['description']);
 $recruiterId = (int)$input['recruiter_id'];
 
 try {
-    $stmt = $pdo->prepare("
-        INSERT INTO jobs (title, description, recruiter_id)
-        VALUES (:title, :description, :recruiter_id)
+    // ✅ Use Database class instead of direct PDO connection
+    $database = new Database();
+    $db = $database->getConnection();
+
+    $stmt = $db->prepare("
+        INSERT INTO jobs (title, description, recruiter_id, created_at)
+        VALUES (:title, :description, :recruiter_id, NOW())
     ");
 
     $stmt->execute([
@@ -48,11 +51,14 @@ try {
 
     echo json_encode([
         "success" => true,
-        "message" => "Job posted successfully"
+        "message" => "Job posted successfully",
+        "job_id" => $db->lastInsertId()
     ]);
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => $e->getMessage()
+        "message" => "Failed to post job",
+        "error" => $e->getMessage()
     ]);
 }

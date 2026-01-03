@@ -1,73 +1,91 @@
 <?php
-include 'config.php';
-
-// Enable error reporting for debugging
-error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
+header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
 
-// Initialize response array
-$response = ["success" => false, "message" => ""];
+require_once __DIR__ . '/../config/database.php';
 
-try {
-    $conn = new mysqli($host,$username,$password,$dbname,$port);
-    
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
-    
-    // Get JSON input
-    $json = file_get_contents("php://input");
-    $data = json_decode($json, true);
-    
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception("Invalid JSON input");
-    }
-    
-    $job_id = $data["job_id"] ?? null;
-    $candidate_id = $data["candidate_id"] ?? null;
-    
-    if (!$job_id || !$candidate_id) {
-        throw new Exception("Missing job_id or candidate_id");
-    }
-    
-    // Check if already applied
-    $checkStmt = $conn->prepare(
-        "SELECT id FROM applications WHERE job_id = ? AND candidate_id = ?"
-    );
-    $checkStmt->bind_param("ii", $job_id, $candidate_id);
-    $checkStmt->execute();
-    $checkStmt->store_result();
-    
-    if ($checkStmt->num_rows > 0) {
-        $response["message"] = "You have already applied to this job";
-        echo json_encode($response);
-        exit;
-    }
-    $checkStmt->close();
-    
-    // Insert application
-    $stmt = $conn->prepare(
-        "INSERT INTO applications (job_id, candidate_id) VALUES (?, ?)"
-    );
-    $stmt->bind_param("ii", $job_id, $candidate_id);
-    
-    if ($stmt->execute()) {
-        $response["success"] = true;
-        $response["message"] = "Application submitted successfully";
-    } else {
-        throw new Exception("Database error: " . $stmt->error);
-    }
-    
-    $stmt->close();
-    $conn->close();
-    
-} catch (Exception $e) {
-    $response["message"] = $e->getMessage();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode([
+        "success" => false,
+        "message" => "Method not allowed"
+    ]);
+    exit;
 }
 
-// Ensure only JSON is output
-echo json_encode($response);
-exit;
+try {
+    // ✅ CREATE DB CONNECTION (THIS WAS MISSING)
+    $database = new Database();
+    $db = $database->getConnection();
+
+    $job_id = $_POST['job_id'] ?? null;
+    $candidate_id = $_POST['candidate_id'] ?? null;
+
+    if (!$job_id || !$candidate_id) {
+        throw new Exception("Missing required fields");
+    }
+
+    /* ---------- FILE UPLOAD ---------- */
+    if (!isset($_FILES['resume']) || $_FILES['resume']['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception("Resume upload failed");
+    }
+
+    $uploadDir = __DIR__ . "/../uploads/";
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $fileExt = strtolower(pathinfo($_FILES['resume']['name'], PATHINFO_EXTENSION));
+    $allowed = ['pdf', 'doc', 'docx', 'txt'];
+
+    if (!in_array($fileExt, $allowed)) {
+        throw new Exception("Invalid file type");
+    }
+
+    if ($_FILES['resume']['size'] > 10 * 1024 * 1024) {
+        throw new Exception("File too large (max 10MB)");
+    }
+
+    $filename = uniqid("resume_", true) . "." . $fileExt;
+    $target = $uploadDir . $filename;
+
+    if (!move_uploaded_file($_FILES['resume']['tmp_name'], $target)) {
+        throw new Exception("Failed to save file");
+    }
+
+    /* ---------- DUPLICATE CHECK ---------- */
+    $check = $db->prepare(
+        "SELECT id FROM applications WHERE job_id = ? AND candidate_id = ?"
+    );
+    $check->execute([$job_id, $candidate_id]);
+
+    if ($check->rowCount() > 0) {
+        unlink($target);
+        throw new Exception("Already applied for this job");
+    }
+
+    /* ---------- INSERT APPLICATION ---------- */
+    $stmt = $db->prepare(
+        "INSERT INTO applications
+        (job_id, candidate_id, resume_filename, status, applied_at)
+        VALUES (?, ?, ?, 'pending', NOW())"
+    );
+
+    $stmt->execute([$job_id, $candidate_id, $filename]);
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Application submitted successfully"
+    ]);
+
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
+}

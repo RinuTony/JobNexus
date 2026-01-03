@@ -8,40 +8,36 @@ header("Content-Type: application/json");
 
 require_once __DIR__ . '/../config/database.php';
 
-$recruiter_id = $_GET["recruiter_id"] ?? null;
+$job_id = $_GET['job_id'] ?? null;
 
-if (!$recruiter_id) {
+if (!$job_id) {
     echo json_encode([
         "success" => false,
-        "message" => "recruiter_id is required"
+        "message" => "Job ID required"
     ]);
-    exit;
+    exit();
 }
 
 try {
-    // ✅ Railway PDO connection
     $database = new Database();
     $db = $database->getConnection();
 
-    $sql = "
+    $query = "
         SELECT 
-            a.id AS application_id,
-            a.status,
-            a.applied_at,
-            j.title AS job_title,
+            a.*,
             u.full_name AS candidate_name,
             u.email AS candidate_email
         FROM applications a
-        JOIN jobs j ON a.job_id = j.id
         JOIN users u ON a.candidate_id = u.id
-        WHERE j.recruiter_id = ?
+        WHERE a.job_id = :job_id
         ORDER BY a.applied_at DESC
     ";
 
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$recruiter_id]);
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':job_id', $job_id, PDO::PARAM_INT);
+    $stmt->execute();
 
-    $applications = $stmt->fetchAll();
+    $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         "success" => true,
@@ -52,6 +48,6 @@ try {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => $e->getMessage()
+        "message" => "Failed to fetch job applications"
     ]);
 }

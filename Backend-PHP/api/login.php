@@ -1,99 +1,121 @@
 <?php
-include 'config.php';
-header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Handle preflight requests
+// Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Database configuration
-$host = 'localhost';
-$dbname = 'job_nexus';
-$username = 'root';
-$password = ''; // XAMPP default is empty
+require_once __DIR__ . '/../config/database.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die(json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]));
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid request method'
+    ]);
+    exit();
 }
 
-// Only handle POST requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get JSON input
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     $email = $input['email'] ?? '';
     $password = $input['password'] ?? '';
     $role = $input['role'] ?? 'candidate';
-    
-    // Validate input
+
     if (empty($email) || empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Email and password are required']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Email and password are required'
+        ]);
         exit();
     }
-    
-    // Check if user exists
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email AND role = :role");
-    $stmt->execute([':email' => $email, ':role' => $role]);
+
+    // Fetch user
+    $stmt = $db->prepare(
+        "SELECT * FROM users WHERE email = :email AND role = :role"
+    );
+    $stmt->execute([
+        ':email' => $email,
+        ':role' => $role
+    ]);
+
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($user) {
-        // In production, use password_verify() with hashed passwords
-        // For now, simple comparison (you should hash passwords!)
-        if ($password === $user['password']) {
-            // Get user profile based on role
-            $profile = [];
-            switch ($role) {
-                case 'candidate':
-                    $stmt = $pdo->prepare("SELECT * FROM candidate_profiles WHERE user_id = :user_id");
-                    break;
-                case 'recruiter':
-                    $stmt = $pdo->prepare("SELECT * FROM recruiter_profiles WHERE user_id = :user_id");
-                    break;
-                case 'admin':
-                    $stmt = $pdo->prepare("SELECT * FROM admin_profiles WHERE user_id = :user_id");
-                    break;
-            }
-            
-            if (isset($stmt)) {
-                $stmt->execute([':user_id' => $user['id']]);
-                $profile = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-            }
-            
-            // Get common profile
-            $stmt = $pdo->prepare("SELECT * FROM profiles WHERE user_id = :user_id");
-            $stmt->execute([':user_id' => $user['id']]);
-            $commonProfile = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => [
-                    'id' => $user['id'],
-                    'email' => $user['email'],
-                    'role' => $user['role'],
-                    'profile' => array_merge($commonProfile, $profile)
-                ],
-                'token' => base64_encode(json_encode([
-                    'userId' => $user['id'],
-                    'email' => $user['email'],
-                    'role' => $user['role']
-                ]))
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Invalid password']);
-        }
-    } else {
-        echo json_encode(['success' => false, 'message' => 'User not found']);
+
+    if (!$user) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'User not found'
+        ]);
+        exit();
     }
-} else {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+
+    // ⚠️ TEMP password check (hash later)
+    if ($password !== $user['password']) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid password'
+        ]);
+        exit();
+    }
+
+    // Get common profile
+    $stmt = $db->prepare(
+        "SELECT * FROM profiles WHERE user_id = :user_id"
+    );
+    $stmt->execute([':user_id' => $user['id']]);
+    $commonProfile = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    // Role-specific profile
+    $roleTable = match ($role) {
+        'candidate' => 'candidate_profiles',
+        'recruiter' => 'recruiter_profiles',
+        'admin' => 'admin_profiles',
+        default => null
+    };
+
+    $roleProfile = [];
+
+    if ($roleTable) {
+        $stmt = $db->prepare(
+            "SELECT * FROM $roleTable WHERE user_id = :user_id"
+        );
+        $stmt->execute([':user_id' => $user['id']]);
+        $roleProfile = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Login successful',
+        'user' => [
+            'id' => $user['id'],
+            'email' => $user['email'],
+            'role' => $user['role'],
+            'profile' => array_merge($commonProfile, $roleProfile)
+        ],
+        // ⚠️ Replace with JWT later
+        'token' => base64_encode(json_encode([
+            'userId' => $user['id'],
+            'email' => $user['email'],
+            'role' => $user['role']
+        ]))
+    ]);
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Server error'
+    ]);
 }
-?>

@@ -1,9 +1,14 @@
 <?php
-include 'config.php';
-header("Access-Control-Allow-Origin: http://localhost:3000");
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+require_once __DIR__ . '/../config/database.php';
+
+header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Authorization, Content-Type");
+header("Access-Control-Allow-Headers: Content-Type");
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
@@ -12,23 +17,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = $input['userId'] ?? 0;
+$userRole = $input['role'] ?? 'candidate'; // Get role from input
 
 if (!$userId) {
     echo json_encode(['success' => false, 'message' => 'User ID required']);
     exit();
 }
 
-$host = 'localhost';
-$dbname = 'job_nexus';
-$username = 'root';
-$password = '';
-
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // ✅ Use Database class instead of creating own PDO
+    $database = new Database();
+    $db = $database->getConnection();
     
-    // Update profile
-    $stmt = $pdo->prepare("
+    // Start transaction
+    $db->beginTransaction();
+    
+    // Update common profile
+    $stmt = $db->prepare("
         INSERT INTO profiles (user_id, first_name, last_name, phone) 
         VALUES (:user_id, :first_name, :last_name, :phone)
         ON DUPLICATE KEY UPDATE 
@@ -44,12 +49,60 @@ try {
         ':phone' => $input['phone'] ?? ''
     ]);
     
-    // Update role-specific profile
-    // (Add similar logic for candidate_profiles, recruiter_profiles, admin_profiles)
+    // Update role-specific profile based on user's role
+    $roleTable = '';
+    switch ($userRole) {
+        case 'candidate':
+            $roleTable = 'candidate_profiles';
+            break;
+        case 'recruiter':
+            $roleTable = 'recruiter_profiles';
+            break;
+        case 'admin':
+            $roleTable = 'admin_profiles';
+            break;
+    }
     
-    echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+    if ($roleTable) {
+        // Check if role profile exists
+        $checkStmt = $db->prepare("SELECT COUNT(*) FROM $roleTable WHERE user_id = :user_id");
+        $checkStmt->execute([':user_id' => $userId]);
+        
+        if ($checkStmt->fetchColumn() > 0) {
+            // Update existing
+            // Add more fields as needed based on your table structure
+            $updateStmt = $db->prepare("
+                UPDATE $roleTable 
+                SET updated_at = NOW()
+                WHERE user_id = :user_id
+            ");
+            $updateStmt->execute([':user_id' => $userId]);
+        } else {
+            // Insert new
+            $insertStmt = $db->prepare("INSERT INTO $roleTable (user_id) VALUES (:user_id)");
+            $insertStmt->execute([':user_id' => $userId]);
+        }
+    }
+    
+    // Commit transaction
+    $db->commit();
+    
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Profile updated successfully'
+    ]);
     
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Update failed: ' . $e->getMessage()]);
+    // Rollback on error
+    if (isset($db) && $db->inTransaction()) {
+        $db->rollBack();
+    }
+    
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Profile update failed',
+        'error' => $e->getMessage()
+    ]);
 }
 ?>
