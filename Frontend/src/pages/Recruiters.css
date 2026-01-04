@@ -52,6 +52,7 @@
   border: none;
   cursor: pointer;
   font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .btn.primary {
@@ -59,15 +60,204 @@
   color: white;
 }
 
+.btn.primary:hover {
+  background: #4338ca;
+}
+
 .btn.secondary {
   background: #e0e7ff;
   color: #3730a3;
+}
+
+.btn.secondary:hover {
+  background: #c7d2fe;
 }
 
 .btn.outline {
   background: transparent;
   border: 1px solid #4f46e5;
   color: #4f46e5;
+}
+
+.btn.outline:hover {
+  background: #4f46e5;
+  color: white;
+}
+
+/* Resume buttons */
+.btn-resume {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-right: 0.5rem;
+}
+
+.btn-view {
+  background: #10b981;
+  color: white;
+  border: none;
+}
+
+.btn-view:hover {
+  background: #059669;
+}
+
+.btn-download {
+  background: #3b82f6;
+  color: white;
+  border: none;
+}
+
+.btn-download:hover {
+  background: #2563eb;
+}
+
+/* Application cards */
+.application-card {
+  border: 1px solid #e5e7eb;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: transform 0.2s ease;
+}
+
+.application-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.application-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.candidate-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.application-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-reviewed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-shortlisted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.application-details {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.resume-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #e5e7eb;
+}
+
+/* Status selector */
+.status-selector {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.status-selector:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  background: #1e293b;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  height: 600px;
+}
+
+.resume-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+}
+
+.no-resume {
+  color: #9ca3af;
+  font-style: italic;
 }
 
 /* Feature grid */
@@ -83,10 +273,22 @@
   padding: 1.2rem;
   border-radius: 12px;
   text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.feature-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
 }
 
 .feature-box h3 {
   margin-bottom: 0.4rem;
+  color: #1e293b;
+}
+
+.feature-box p {
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 /* Footer */
@@ -94,4 +296,52 @@
   text-align: center;
   padding: 1.5rem;
   color: #6b7280;
+  margin-top: 3rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Container styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #1f2937;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container,
+  .dashboard-container {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .modal-content {
+    width: 95%;
+  }
 }

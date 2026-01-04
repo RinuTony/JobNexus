@@ -23,28 +23,24 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             
         } catch(PDOException $e) {
-            http_response_code(500);
-            echo json_encode([
-                "success" => false,
-                "message" => "Database connection failed: " . $e->getMessage()
-            ]);
-            exit;
+            // ✅ DON'T echo here - just throw the exception
+            throw new Exception("Database connection failed: " . $e->getMessage());
         }
         
         return $this->conn;
     }
 }
 
-// Optional: Create a global PDO instance for backward compatibility
-try {
-    $database = new Database();
-    $pdo = $database->getConnection();
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        "success" => false,
-        "message" => "Database initialization failed"
-    ]);
-    exit;
-}
+// Optional: Remove this global part - it's causing issues
+// try {
+//     $database = new Database();
+//     $pdo = $database->getConnection();
+// } catch (Exception $e) {
+//     http_response_code(500);
+//     echo json_encode([
+//         "success" => false,
+//         "message" => "Database initialization failed"
+//     ]);
+//     exit;
+// }
 ?>

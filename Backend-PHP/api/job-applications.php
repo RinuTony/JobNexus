@@ -23,15 +23,16 @@ try {
     $db = $database->getConnection();
 
     $query = "
-        SELECT 
-            a.*,
-            u.full_name AS candidate_name,
-            u.email AS candidate_email
-        FROM applications a
-        JOIN users u ON a.candidate_id = u.id
-        WHERE a.job_id = :job_id
-        ORDER BY a.applied_at DESC
-    ";
+    SELECT 
+        a.*,
+        u.full_name AS candidate_name,
+        u.email AS candidate_email,
+        u.id AS candidate_id  // ADD THIS
+    FROM applications a
+    JOIN users u ON a.candidate_id = u.id
+    WHERE a.job_id = :job_id
+    ORDER BY a.applied_at DESC
+";
 
     $stmt = $db->prepare($query);
     $stmt->bindParam(':job_id', $job_id, PDO::PARAM_INT);
